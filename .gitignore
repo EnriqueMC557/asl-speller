@@ -122,3 +122,19 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+asl-alphabet-2/test/images/
+
+asl-alphabet-2/test/labels/
+
+asl-alphabet-2/train/images/
+
+asl-alphabet-2/train/labels/
+
+asl-alphabet-2/valid/images/
+
+asl-alphabet-2/valid/labels/
+
+images_test_speller_NO/
+
+env.py

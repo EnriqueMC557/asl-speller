@@ -1,0 +1,38 @@
+names:
+- A
+- B
+- C
+- D
+- E
+- F
+- G
+- H
+- I
+- J
+- K
+- L
+- M
+- N
+- O
+- P
+- Q
+- R
+- S
+- T
+- U
+- V
+- W
+- X
+- Y
+- Z
+- nothing
+nc: 27
+roboflow:
+  license: CC BY 4.0
+  project: asl-alphabet-fb7de
+  url: https://universe.roboflow.com/lsmdetection/asl-alphabet-fb7de/dataset/2
+  version: 2
+  workspace: lsmdetection
+test: ../../asl-alphabet-2/test/images
+train: ../../asl-alphabet-2/train/images
+val: ../../asl-alphabet-2/valid/images
