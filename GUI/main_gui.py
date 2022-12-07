@@ -59,6 +59,7 @@ class Asl_gui(QWidget):
 
     def iniciar(self):
         self.timer_result.start(2000)
+        self.ui.text_result.setText('')
 
         self.ui.startbutton.setDisabled(True)
         self.ui.finishbutton.setDisabled(False)
@@ -72,60 +73,62 @@ class Asl_gui(QWidget):
         seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
 
         self.results = []
-        for path, im, im0s, vid_cap, s in self.dataset:
-            with dt[0]:
-                im = torch.from_numpy(im).to(self.model.device)
-                im = im.half() if self.model.fp16 else im.float()  # uint8 to fp16/32
-                im /= 255  # 0 - 255 to 0.0 - 1.0
-                if len(im.shape) == 3:
-                    im = im[None]  # expand for batch dim
+        try:
+            for path, im, im0s, vid_cap, s in self.dataset:
+                with dt[0]:
+                    im = torch.from_numpy(im).to(self.model.device)
+                    im = im.half() if self.model.fp16 else im.float()  # uint8 to fp16/32
+                    im /= 255  # 0 - 255 to 0.0 - 1.0
+                    if len(im.shape) == 3:
+                        im = im[None]  # expand for batch dim
 
-            # Inference
-            with dt[1]:
-                pred = self.model(im, augment=False, visualize=False)
+                # Inference
+                with dt[1]:
+                    pred = self.model(im, augment=False, visualize=False)
 
-            # NMS
-            with dt[2]:
-                pred = non_max_suppression(pred, 0.25, 0.45, None, False, max_det=1000)
+                # NMS
+                with dt[2]:
+                    pred = non_max_suppression(pred, 0.25, 0.45, None, False, max_det=1000)
 
-            # Process predictions
-            for i, det in enumerate(pred):  # per image
-                seen += 1
-                p, im0, frame = path[i], im0s[i].copy(), self.dataset.count
-                annotator = Annotator(im0, line_width=3, example=str(self.names))
+                # Process predictions
+                for i, det in enumerate(pred):  # per image
+                    seen += 1
+                    p, im0, frame = path[i], im0s[i].copy(), self.dataset.count
+                    annotator = Annotator(im0, line_width=3, example=str(self.names))
 
-                if len(det):
-                    # Rescale boxes from img_size to im0 size
-                    det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
+                    if len(det):
+                        # Rescale boxes from img_size to im0 size
+                        det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
 
-                    # Print results
-                    for c in det[:, 5].unique():
-                        detected_class = int(c)
-                        self.results.append(detected_class)
-                        # detected_class = str(self.names[int(c)])
-                        # detected_class = '-'if detected_class == 'nothing' else detected_class
-                        # self.results.append(detected_class)
+                        # Print results
+                        for c in det[:, 5].unique():
+                            detected_class = int(c)
+                            self.results.append(detected_class)
 
-                    # Write results
-                    for *xyxy, conf, cls in reversed(det):
-                        # Add bbox to image
-                        c = int(cls)  # integer class
-                        label = f'{self.names[c]} {conf:.2f}'
-                        annotator.box_label(xyxy, label, color=colors(c, True))
+                        # Write results
+                        for *xyxy, conf, cls in reversed(det):
+                            # Add bbox to image
+                            c = int(cls)  # integer class
+                            label = f'{self.names[c]} {conf:.2f}'
+                            annotator.box_label(xyxy, label, color=colors(c, True))
 
-                # Stream results
-                im0 = annotator.result()
-                rgbImage = cv2.cvtColor(im0, cv2.COLOR_BGR2RGB)
-                h, w, ch = rgbImage.shape
-                bytesPerLine = ch * w
-                convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
-                p = convertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
-                self.ui.camera_label.setPixmap(QPixmap.fromImage(p))
+                    # Stream results
+                    im0 = annotator.result()
+                    rgbImage = cv2.cvtColor(im0, cv2.COLOR_BGR2RGB)
+                    h, w, ch = rgbImage.shape
+                    bytesPerLine = ch * w
+                    convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
+                    p = convertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
+                    self.ui.camera_label.setPixmap(QPixmap.fromImage(p))
+        except AttributeError:
+            # Esto está bien, ocurre cuando se cierra la cámara
+            pass
 
     def finish(self):
+        self.dataset.cap.release()
+        self.dataset = None
         self.ui.camera_label.setPixmap(QPixmap("webcam.jpg"))
         self.timer_result.stop()
-        self.cap.release()
 
         self.ui.startbutton.setDisabled(False)
         self.ui.finishbutton.setDisabled(True)
