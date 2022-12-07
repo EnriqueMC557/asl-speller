@@ -34,7 +34,7 @@ class Asl_gui(QWidget):
         self.ui.setupUi(self)
         self.timer_result = QTimer()
         self.results = []
-        self.space = '--'
+        self.space = '  '
         self.palabra = ''
         self.dataset = None
         self.bs = None
@@ -51,11 +51,12 @@ class Asl_gui(QWidget):
         self.timer_result.timeout.connect(self.updateTextResult)
 
     def updateTextResult(self):
-        mode_class = mode(self.results)
-        letra = self.space if str(self.names[mode_class]) == 'nothing' else str(self.names[mode_class])
-        self.palabra += letra
-        self.ui.text_result.setText(self.palabra)
-        self.results = []
+        if len(self.results) > 0:
+            mode_class = mode(self.results)
+            letra = self.space if str(self.names[mode_class]) == 'nothing' else str(self.names[mode_class])
+            self.palabra += letra
+            self.ui.text_result.setText(self.palabra)
+            self.results = []
 
     def iniciar(self):
         self.timer_result.start(2000)
@@ -88,7 +89,7 @@ class Asl_gui(QWidget):
 
                 # NMS
                 with dt[2]:
-                    pred = non_max_suppression(pred, 0.25, 0.45, None, False, max_det=1000)
+                    pred = non_max_suppression(pred, 0.5, 0.45, None, False, max_det=1000)
 
                 # Process predictions
                 for i, det in enumerate(pred):  # per image
@@ -129,6 +130,7 @@ class Asl_gui(QWidget):
         self.dataset = None
         self.ui.camera_label.setPixmap(QPixmap("webcam.jpg"))
         self.timer_result.stop()
+        self.palabra = ''
 
         self.ui.startbutton.setDisabled(False)
         self.ui.finishbutton.setDisabled(True)
